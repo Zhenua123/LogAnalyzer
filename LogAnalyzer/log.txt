@@ -1,0 +1,5 @@
+ERROR Connection failed
+WARNING Disk space low
+ERROR Timeout occurred
+WARNING High memory usage
+ERROR Permission denied

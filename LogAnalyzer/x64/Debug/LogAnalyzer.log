@@ -1,0 +1,3 @@
+﻿  LogAnalyzer.cpp
+C:\Users\пк\source\repos\LogAnalyzer\LogAnalyzer\LogAnalyzer.cpp(83,19): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
+  LogAnalyzer.vcxproj -> C:\Users\пк\source\repos\LogAnalyzer\x64\Debug\LogAnalyzer.exe
