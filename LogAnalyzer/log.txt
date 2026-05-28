@@ -2,4 +2,19 @@ ERROR Connection failed
 WARNING Disk space low
 ERROR Timeout occurred
 WARNING High memory usage
-ERROR Permission denied
+ERrOR Permission denied
+{ErRoR} Something happend
+Something happend2 {ErRoR}
+Something {ErRoR} happend2
+
+UNDEFINED HELLO PEPE
+
+UNDEFINED SHEINE
+
+2025-03-12 14:21:58 WARNING Payment timeout order_id=9281
+
+INFO: User 421 successfully logged in
+
+DEBUG: Calculated discount = 12.5% for user_id=421
+
+CRITICAL: Main database unreachable — stopping core services
