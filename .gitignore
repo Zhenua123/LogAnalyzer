@@ -1,1 +1,10 @@
 .vs/
+x64/
+Debug/
+*.exe
+*.pdb
+*.ilk
+*.tlog
+*.obj
+stats.csv
+stats.json

@@ -4,6 +4,7 @@
 #include <map>
 #include <algorithm>
 #include <vector>
+#include <cctype>
 
 ////Нужно для задержки////
 #include <chrono>
@@ -12,6 +13,48 @@
 
 
 using error_type = std::map<std::string, int>;
+
+// Функция загрузки конфигурации из файла config.cfg
+std::vector<std::string> loadConfig(const std::string& configFile = "config.cfg") {
+    std::vector<std::string> keywords;
+
+    // Стандартные значения (если файл не откроется)
+    std::vector<std::string> defaultKeywords = { "error", "warning", "critical", "info", "debug" };
+
+    std::ifstream file(configFile);
+    if (!file.is_open()) {
+        std::cout << "Config file not found. Using default keywords." << std::endl;
+        return defaultKeywords;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        // Пропускаем пустые строки и комментарии
+        if (line.empty() || line[0] == '#') continue;
+
+        // Удаляем пробелы в начале и конце
+        line.erase(0, line.find_first_not_of(" \t"));
+        line.erase(line.find_last_not_of(" \t") + 1);
+
+        if (!line.empty()) {
+            keywords.push_back(line);
+        }
+    }
+    file.close();
+
+    if (keywords.empty()) {
+        std::cout << "Config file is empty. Using default keywords." << std::endl;
+        return defaultKeywords;
+    }
+
+    std::cout << "Loaded keywords: ";
+    for (const auto& kw : keywords) {
+        std::cout << kw << " ";
+    }
+    std::cout << std::endl;
+
+    return keywords;
+}
 
 void exportJSON(const error_type& errors)
 {
@@ -69,20 +112,68 @@ void histogram(const error_type& errors)
     }
 }
 
+// Функция для циклической проверки файла
+void cyclicCheck(const std::string& filename, int intervalSeconds) {
+    std::cout << "\n=== CYCLIC MODE ENABLED ===" << std::endl;
+    std::cout << "Checking file every " << intervalSeconds << " seconds" << std::endl;
+    std::cout << "Press Ctrl+C to stop" << std::endl;
+
+    while (true) {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            std::cerr << "Error: Cannot open file " << filename << std::endl;
+        }
+        else {
+            error_type errors = findErrors(file);
+            file.close();
+
+            if (!errors.empty()) {
+                std::cout << "\n--- New analysis at "
+                    << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())
+                    << " ---" << std::endl;
+                exportJSON(errors);
+                exportCSV(errors);
+                histogram(errors);
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
+    }
+}
+
 std::string parseArgs(int argc, char* argv[])
 {
-    //Добавить обработку одного флага --cycled 60 (-c 60)
-    //Этот флаг будет включать циклическую проверку файла лога через каждые несколько секунд или минуту
-
     std::string filename;
+    bool cyclicMode = false;
+    int interval = 60; // по умолчанию 60 секунд
+
+    // Обработка аргументов командной строки
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+
+        if (arg == "--cycled" || arg == "-c") {
+            cyclicMode = true;
+            if (i + 1 < argc) {
+                interval = std::stoi(argv[i + 1]);
+                i++;
+            }
+        }
+        else if (filename.empty()) {
+            filename = arg;
+        }
+    }
+
     // Если файл не передан как аргумент - запрашиваем у пользователя
-    if (argc != 2) {
+    if (filename.empty()) {
         std::cout << "Enter log file path: ";
         std::cin >> filename;
     }
-    else {
-        filename = argv[1];
+
+    // Если включен циклический режим - запускаем его
+    if (cyclicMode) {
+        cyclicCheck(filename, interval);
     }
+
     return filename;
 }
 
@@ -91,11 +182,9 @@ error_type findErrors(std::ifstream& file)
     // Подсчёт частоты ошибок
     error_type errors;
     std::string line;
-    
-    //Добавить заполнение не "ручками", а автоматическое из файла config.cfg.
-    //Если это не удаётся, то устанавливают какие-нибудь стандартные значения
 
-    std::vector<std::string> possible_issues = { "error", "warning", "log", "critical", "info" };
+    // Автоматическая загрузка из файла config.cfg
+    std::vector<std::string> possible_issues = loadConfig();
 
     while (std::getline(file, line)) {
 
@@ -105,12 +194,13 @@ error_type findErrors(std::ifstream& file)
                 return std::tolower(ch);
             });
 
-        for (size_t i = 0; i < possible_issues.size(); i++)
-        {
-            std::string current_error = possible_issues[i];
-
-            if (line.find(current_error) != std::string::npos) {
-                errors[current_error]++;
+        for (const auto& keyword : possible_issues) {
+            if (line.find(keyword) != std::string::npos) {
+                // Преобразуем в верхний регистр для вывода
+                std::string upperKeyword = keyword;
+                std::transform(upperKeyword.begin(), upperKeyword.end(),
+                    upperKeyword.begin(), ::toupper);
+                errors[upperKeyword]++;
             }
         }
     }
@@ -131,10 +221,11 @@ int main(int argc, char* argv[]) {
     }
 
     error_type errors = findErrors(file);
-    
+
     file.close();
 
-    //Вероятно, где-нибудь здесь будет задержка (нужен thread и chrono)
+    // Задержка на 30 секунд (для демонстрации)
+    std::cout << "\nWaiting 30 seconds before analysis..." << std::endl;
     std::this_thread::sleep_for(std::chrono::seconds(30));
 
     // Проверка на пустую статистику

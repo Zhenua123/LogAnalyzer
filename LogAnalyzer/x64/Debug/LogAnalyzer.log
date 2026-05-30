@@ -1,5 +1,0 @@
-﻿  LogAnalyzer.cpp
-C:\Users\Джоджи\Desktop\LogAnalyzer\LogAnalyzer\LogAnalyzer.cpp(19,19): warning C4267: инициализация: преобразование из "size_t" в "int"; возможна потеря данных
-  LogAnalyzer.vcxproj -> C:\Users\Джоджи\Desktop\LogAnalyzer\x64\Debug\LogAnalyzer.exe
-  "pwsh.exe" не является внутренней или внешней
-  командой, исполняемой программой или пакетным файлом.
